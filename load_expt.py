@@ -119,9 +119,12 @@ def check_data(c):
                 c[i] = 0.0
             elif x == "OOR >": ##above detectable range, set to NaN
                 c[i] = np.nan
+            elif x == "***": #data not available; set to NaN
+                c[i] = np.nan
+            elif x == "---": #designated outlier; set to NaN
+                c[i] = np.nan
             elif '*' in x:
                 c[i] = float(''.join( c for c in x if  c !='*'))
-            ##TODO: add other checking here for alternate possibilities
     return c
                 
         

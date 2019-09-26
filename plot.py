@@ -16,6 +16,7 @@ def plot_analyte(data,analyte,save=False):
     Args:
         -data: populated data dictionary
         -analyte (str): name of the analyte to plot (must match name in excel file)
+        -save: if not False, should be the path to save the plot to
     """
     colors = ['r','b','g','orange','cyan']
     
