@@ -75,6 +75,9 @@ class Sample:
         """
         ##we can use an sheet here, so just take the first one
         sheet = wb.sheet_by_index(0)
+        ##TODO: add some error checking here. depending on the metadata entered into 
+        ##the reader software, you could have more or less lines. Therefore in the line
+        ##below, row(9) might not be correct. Need some way to find which row to use.
         names = np.array([x.value for x in sheet.row(9) if not x.value==xlrd.empty_cell.value])
         ##not sure the best way to error-check this, but at least make sure the list isn't empty:
         assert names.size > 0, "No analytes found"

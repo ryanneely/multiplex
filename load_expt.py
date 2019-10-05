@@ -20,6 +20,7 @@ def get_data(f):
         -experiment: data dictionary populated with Sample objects containing the data
     """
     ##import the metadata (I know, bad practice etc, etc)
+    ##here we have to do some tricks to load a module from a different location
     spec = importlib.util.spec_from_file_location("expt", f)
     expt = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(expt)
