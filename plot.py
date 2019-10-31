@@ -6,10 +6,12 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from scipy.stats import ttest_ind
 import load_expt
 import combine_plates
 import os
+import analyze
 
 def plot_analyte(data,analyte,save=False):
     """
@@ -101,6 +103,60 @@ def plot_multi(maps,ignore=[],save=False):
     analyte_list = data[groups[0]][trials[0]][samples[0]].analyte_names
     for a in analyte_list:
         plot_analyte(data,a,save=save)
+
+def plot_all_norm(maps,ignore=[],ctrl='sham',skip=[],cmap='bwr',save=False):
+    """
+    Function to plot all data normalized to control values.
+    Creates a different plot for each test condition.
+    Args:
+        -maps (iterable): list of metadata file paths        
+        -ignore (list): adding group names to ignore causes the function not to
+            add these groups to the final dset. Helpful if you want to grab the control
+            data from a plate, but not the stim data.
+        -ctrl: the string corresponding to the control group
+        -skip: list of analytes to skit
+        -cmap: custom colormapping code
+        -save: if not False, should be a file path to save the files to.
+    """
+    ##start by getting processing the data
+    data = combine_plates.combine(maps,ignore=ignore)
+    ##now normalize the data to control
+    x,data = analyze.norm_all(data,ctrl=ctrl)
+    analytes = [x for x in list(data) if not x in skip] ##list of analyte names
+    ##get a list of the different test conditions
+    test_groups = list(data[analytes[0]])
+    for g in test_groups:
+        ##create a big old plot where each subplot is a different analyte
+        fig,axes = plt.subplots(len(analytes),sharex=True)
+        fig.suptitle(g,fontsize=14)
+        for i,a in enumerate(analytes):
+            ax = axes[i]
+            ax.set_title(a)
+            a_data = data[a][g] ##data for this analyte and test group
+            ax.plot(x,np.zeros(len(x)),linestyle='dashed',alpha=0.5)##zero line
+            for n,b in enumerate(x):
+                rgb_vals = colormap(a_data[:,n],map=cmap) ##create a unique color map for this set of points
+                ax.scatter(b+np.random.random(a_data.shape[1])*np.diff(x).mean()/4,
+                a_data[:,n],c=rgb_vals)
+    
+
+def colormap(data,map='bwr'):
+    """
+    function to return RGB values for a dataset along a specified colormap,
+    normalizing to the max and min values of the data.
+    Args:
+        -data: 1-D array of some data
+        -map: cmap code to apply
+    Returns:
+        -rgb_vals: rgb codes corresponding to each data point
+    """
+    cmap = matplotlib.cm.get_cmap(map)
+    norm = matplotlib.colors.Normalize(vmin=data.min(),vmax=data.max())
+    rgb_vals = []
+    for d in data:
+        rgb_vals.append(cmap(norm(d)))
+    return rgb_vals
+
 
 def remove_forward_slash(string):
     newstr = ''
