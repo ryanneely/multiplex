@@ -88,9 +88,9 @@ def divergence_single(ctrl,test):
     """
     ##the value to normalize to is the difference between test and ctrl at the baseline
     ##timepoint, assumed to be the first one.
-    base = test[:,0].mean()-ctrl[:,0].mean()
+    base = np.nanmean(test[:,0])-np.nanmean(ctrl[:,0])
     ##absoulte difference at all timepoints
-    diff = test.mean(axis=0)-ctrl.mean(axis=0)
+    diff = np.nanmean(test,axis=0)-np.nanmean(ctrl,axis=0)
     ##now normalize to the first difference
     return (diff-base)/abs(base)
 
