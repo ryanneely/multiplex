@@ -92,7 +92,7 @@ def divergence_single(ctrl,test):
     ##absoulte difference at all timepoints
     diff = test.mean(axis=0)-ctrl.mean(axis=0)
     ##now normalize to the first difference
-    return diff/base
+    return (diff-base)/abs(base)
 
 def divergence_all(data,ctrl='sham',test=None):
     """
