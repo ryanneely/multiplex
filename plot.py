@@ -104,6 +104,39 @@ def plot_multi(maps,ignore=[],save=False):
     for a in analyte_list:
         plot_analyte(data,a,save=save)
 
+def plot_divergence(data,analytes,samples,cmap='Spectral',vmin=-5,vmax=5,title="Divergence data"):
+    """
+    Function to plot the "divergence" data showing how the test data
+    diverges from the control data using the baseline differences to normalize.
+    Args:
+        -data: divergence data matrix; see "divergence_all" function in analyze.py
+        -analytes: list of analytes used in same order as the data matrix axis 0
+        -samples: np.array of sample timepoints
+        -cmap, optional: specify a custom matplotlib cmap to use
+        -vmin, vmax: specify the max and min limits for the cmap
+    """
+    fig, ax = plt.subplots(1)
+    ##roughly organize the data according to the mean divergance across all timepoints
+    s = np.argsort(data.mean(axis=1))[::-1] ##reverse the sort to put high vals on top
+    data = data[s,:]
+    analytes = analytes[s]
+    cax = ax.imshow(data,aspect='auto',cmap=cmap,vmin=vmin,vmax=vmax,
+        origin='lower',interpolation='nearest')
+    ax.set_yticks(np.arange(len(analytes)))
+    ax.set_yticklabels(analytes)
+    ax.set_xticks(np.arange(len(samples)))
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(12)
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(12)
+    cb = plt.colorbar(cax)
+    cb.set_label("Divergence",fontsize=12)
+    ax.set_xlabel("Sample time",fontsize=12)
+    ax.set_ylabel("Analyte",fontsize=12)
+    ax.set_title(title)
+    fig.tight_layout()
+    
+
 def plot_all_norm(maps,ignore=[],ctrl='sham',skip=[],cmap='bwr',save=False):
     """
     Function to plot all data normalized to control values.
