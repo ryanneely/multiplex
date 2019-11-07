@@ -104,7 +104,7 @@ def plot_multi(maps,ignore=[],save=False):
     for a in analyte_list:
         plot_analyte(data,a,save=save)
 
-def plot_divergence(data,analytes,samples,cmap='Spectral',vmin=-5,vmax=5,title="Divergence data"):
+def plot_divergence(data,analytes,samples,cmap='Spectral_r',vmin=-5,vmax=5,title="Divergence data"):
     """
     Function to plot the "divergence" data showing how the test data
     diverges from the control data using the baseline differences to normalize.
@@ -117,7 +117,7 @@ def plot_divergence(data,analytes,samples,cmap='Spectral',vmin=-5,vmax=5,title="
     """
     fig, ax = plt.subplots(1)
     ##roughly organize the data according to the mean divergance across all timepoints
-    s = np.argsort(data.mean(axis=1))[::-1] ##reverse the sort to put high vals on top
+    s = np.argsort(data.mean(axis=1))
     data = data[s,:]
     analytes = analytes[s]
     cax = ax.imshow(data,aspect='auto',cmap=cmap,vmin=vmin,vmax=vmax,
