@@ -2,7 +2,7 @@
 
 ##functions to load multiplex data
 
-##by Ryan Neely 7/15/19
+##by Ryan Neely 7/15/19 modified by Marius Guerard
 
 import numpy as np
 import importlib.util
@@ -10,23 +10,26 @@ from sample import Sample
 import xlrd
 import copy
 
-def get_data(f):
+
+def get_data(data_file, output_analytes=False):
     """
     A function to load and organize all of the data
     from on experiment
     Args:
-        -f: the path experiment file containing all of the metadata
+        -data_file (str): the path of the file containing all the multiplex data and the map.
     Returns:
-        -experiment: data dictionary populated with Sample objects containing the data
+        -experiment (dic): data dictionary populated with Sample objects containing the data
     """
-    ##import the metadata (I know, bad practice etc, etc)
-    ##here we have to do some tricks to load a module from a different location
-    spec = importlib.util.spec_from_file_location("expt", f)
-    expt = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(expt)
-    wb = xlrd.open_workbook(expt.workbook) ##the path to the excel datafile
-    experiment = expt.experiment ##the dictionary with all of the group/sample info
-    ##the experiment dictionary now contains the sample ID of each sample as 
+
+    ### Start by getting the map from the "map sheet" at the end of the data file.
+    data_xl = xlrd.open_workbook(data_file)
+    map_sheet = data_xl.sheet_by_index(-1)
+    experiment = extract_map_from_sheet(map_sheet)
+
+    # Store all the analytes present on this experiment.
+    analytes_set = set()
+
+    ##the experiment dictionary now contains the sample ID of each sample as
     ##specified in the excel file. Now we have what we need to go through and
     ##replace each str sample ID with populated Sample objects
     for g in list(experiment): ##top level is ctrl, experimental groups
@@ -36,20 +39,49 @@ def get_data(f):
             for s in list(trial):
                 sample_id = trial[s]
                 ##now replace the ID with a populated Sample object
-                trial[s] = Sample(s,trial,sample_id,wb)
-    return experiment
+                trial[s] = Sample(s, trial, sample_id, data_xl)
+                analytes_set.update(set(trial[s].analyte_names))
+    if output_analytes:
+        return experiment, analytes_set
+    else:
+        return experiment
+
+
+def extract_map_from_sheet(map_sheet):
+    """ Given an excel map, return the multiplex_id it is associated with as well as a python
+    dictionary contianing the map.
+    """
+    exp = {}
+    for row_idx in range(1, map_sheet.nrows):
+        stim_type = map_sheet.cell(row_idx, 3).value
+        dataset_name = map_sheet.cell(row_idx, 0).value
+        # print(dataset_name)
+        # Extracting the mapping for each time.
+        time_tmp = map_sheet.cell(row_idx, 1).value
+        map_tmp = map_sheet.cell(row_idx, 2).value
+        # Removing the eventual spaces.
+        time_tmp = time_tmp.replace(" ", "")
+        map_tmp = map_tmp.replace(" ", "")
+        # Getting all the values for time and map.
+        time_vec = time_tmp.split(',')
+        map_vec = map_tmp.split(',')
+        exp.setdefault(stim_type, {})[dataset_name] = {time: map_time
+                                                       for time, map_time in zip(time_vec, map_vec)}
+    return exp
+
+
 
 def get_analyte_data(data,name,avg=True,warn_cv=0.2):
     """
-    Function that returns data from a single analyte for all samples. 
+    Function that returns data from a single analyte for all samples.
     Args:
         -data: a populated dictionary of data
         -name: name of the analyte (str), must match what is in the spreadsheet.
         -avg (bool): whether or not to average across duplicates
         -warn_cv: warn if the CV of the concentration is over N.
-            if N = 0, do not issue a warning. 
+            if N = 0, do not issue a warning.
     Returns:
-        -concentrations of analyte for all samples, in dictionary format. 
+        -concentrations of analyte for all samples, in dictionary format.
     """
     data2 = copy.deepcopy(data) ##create a full copy so as not to edit the original
     for g in list(data2): ##top level is ctrl, experimental groups
@@ -67,20 +99,21 @@ def get_analyte_data(data,name,avg=True,warn_cv=0.2):
                 c = check_data(analyte.c_obs)
                 # print(c)
                 ##TODO: decide whether to look at FI %CV or to stick with concentrations
-                cv = np.nanstd(c,ddof=1)/np.nanmean(c)
-                if (warn_cv>0) and (cv>warn_cv):
-                    print("Warning: cv for sample {} from {} is {}".format(s,t,cv))
+                # cv = np.nanstd(c,ddof=1)/np.nanmean(c)
+                # if (warn_cv>0) and (cv>warn_cv):
+                #     print("Warning: cv for sample {} from {} is {}".format(s,t,cv))
                 if avg:
                     c = np.nanmean(c)
                 trial[s] = c
     return data2
 
+
 def group_data(results):
     """
     Returns the group data one analyte packaged in a nice array format.
     Note: this was really designed assuming a set of experiments
-    with regular, equal sample structure, and might not work well for 
-    other experimental designs. 
+    with regular, equal sample structure, and might not work well for
+    other experimental designs.
     Args:
         -results: the results dictionary, as output buy the function get_analyte_data.
             data needs to be averaged across duplicates.
@@ -105,6 +138,7 @@ def group_data(results):
         out[g] = np.asarray(data)
     return x,out
 
+
 def check_data(c):
     """
     Handle any odd notations that might occur in the excel file
@@ -127,7 +161,7 @@ def check_data(c):
             elif '*' in x:
                 c[i] = float(''.join( c for c in x if  c !='*'))
     return c
-                
-        
+
+
 def standard_curve():
     pass
