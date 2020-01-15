@@ -78,7 +78,7 @@ class Sample:
         ##TODO: add some error checking here. depending on the metadata entered into 
         ##the reader software, you could have more or less lines. Therefore in the line
         ##below, row(9) might not be correct. Need some way to find which row to use.
-        names = np.array([x.value for x in sheet.row(9) if not x.value==xlrd.empty_cell.value])
+        names = np.array([x.value for x in sheet.row(8) if not x.value==xlrd.empty_cell.value])
         ##not sure the best way to error-check this, but at least make sure the list isn't empty:
         assert names.size > 0, "No analytes found"
         self.analyte_names = names
@@ -118,7 +118,7 @@ class Analyte:
         vals = [self.outlier,self.fl_raw,self.fl,self.c_obs,self.c_exp]
         for val,p in zip(vals,self.props):
             sheet = wb.sheet_by_name(p) ##the sheet for this analyte
-            analyte_names = np.array([x.value for x in sheet.row(9)]) ##analyte row headings
+            analyte_names = np.array([x.value for x in sheet.row(8)]) ##analyte row headings
             col = np.where(analyte_names==self.name)[0] ##column with data for this analyte
             assert len(col) > 0, "Can't find {} in sheet {}.".format(self.name,p)
             if len(col) > 1:
