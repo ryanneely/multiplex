@@ -110,10 +110,10 @@ def get_analyte_data(data,name,avg=True,warn_cv=0.2):
 
 def group_data(results):
     """
-    Returns the group data one analyte packaged in a nice array format.
+    Returns the group data from one analyte packaged in a nice array format.
     Note: this was really designed assuming a set of experiments
     with regular, equal sample structure, and might not work well for
-    other experimental designs.
+    other experimental designs. We'll try to organize things as best we can. 
     Args:
         -results: the results dictionary, as output buy the function get_analyte_data.
             data needs to be averaged across duplicates.
@@ -122,19 +122,21 @@ def group_data(results):
         -out: dictionary with data compiled across the top-
             level groups, assumed to be experimental conditions.
     """
-    groups = list(results)
+    groups = list(results) ##this is the group level ("sham","stim",etc)
     ##create the output dictionary
     out = {}
-    x = None
+    x = check_timepoints(results) ##this is the list of all possible timepoints
     for g in groups:
-        trials = list(results[g])
-        data = []
-        for t in trials:
-            if x is not None:
-                ##check here to make sure the sample times are are the same
-                assert np.all(x == np.asarray(list(results[g][t]))), "Sample times not aligned"
-            x = np.asarray(list(results[g][t]))
-            data.append(np.asarray(list(results[g][t].values())))
+        trials = list(results[g]) ##these are the individual experiments ("12_12_20_RN1")
+        data = np.empty((len(trials),len(x))) #we will fill this with the data 
+        data[:] = np.nan ##any sets with missing data will be left as NaN
+        for i,t in enumerate(trials):
+            ##now put all of the available data in the data array
+            for n,p in enumerate(x):
+                try:
+                    data[i,n] = results[g][t][p]
+                except KeyError: ##case where we're missing this timepoint
+                    print("Missing timepoint {} in set {}".format(p,t))
         out[g] = np.asarray(data)
     return x,out
 
@@ -161,6 +163,27 @@ def check_data(c):
             elif '*' in x:
                 c[i] = float(''.join( c for c in x if  c !='*'))
     return c
+
+def check_timepoints(d):
+    """
+    Function to check timepoints present in a set of data. Understanding
+    that some timepoints will be missing from some samples, we want to 
+    be able to define those points as np.nan so that we can still integrate that
+    set with everything else.
+    Args:
+        -d: data dictionary for one analyte. 
+    Returns:
+        -timepoints: an array with the most timepoints recorded in this set of data
+    """
+    groups = list(d)
+    timepoints = []
+    for g in groups:
+        for e in list(d[g]): ##the data from one animal, presumeably
+            x = list(d[g][e]) ##the timepoints from this set
+            if len(x)>len(timepoints):
+                timepoints = x
+    return timepoints
+
 
 
 def standard_curve():
